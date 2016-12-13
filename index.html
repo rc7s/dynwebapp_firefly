@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Firefly Chat</title>
+		<style>
+			body {
+				margin: 0px;
+			}
+            
+            
+            h1{
+                margin-left: 20px;
+                margin-top: 20px;
+                font-family: sans-serif;
+                letter-spacing: -0.06em;
+                color: white;
+            }
+		</style>
+	</head>
+	<body>
+        <h1>firefly</h1>
+		<script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/p5.js/0.5.4/p5.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.5.4/addons/p5.dom.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+        <script language="javascript" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.5.4/addons/p5.sound.js"></script>
+
+
+		<script id="canvas">
+			var socket = io();
+            socket.on('receive firefly', function(msg){
+                audioStream2.amp(msg.otherMic*2);
+                fill(255,221,0,random(255));
+                ellipse(map(msg.posX,20,msg.winX-20,20,windowWidth-20) + msg.w, map(msg.posY,20,msg.winY-20,20,windowHeight-20) + msg.h,3,3);
+            });
+            var clientX;
+            var clientY;
+            var clientMic;
+            var audioStream;
+            var audioStream2;
+            var notes;
+            function setup(){
+                //randomSeed(random(420));
+                frameRate(30);
+                var canvas = createCanvas(windowWidth,windowHeight);
+                canvas.position(0,0);
+                canvas.style('z-index','-1');
+                colorMode(RGB);
+                background(0,0,0);
+                clientX = random(20,windowWidth-20);
+                clientY = random(20,windowHeight-20);
+                
+                //sound
+                clientMic = new p5.AudioIn()
+                clientMic.start();
+                notes = [ "329","370","392","440","494","523","587","659"];
+                audioStream = new p5.Oscillator();
+                audioStream2 = new p5.Oscillator();
+                audioStream.amp(0.5);
+                audioStream2.amp(0);
+                audioStream.start();
+                audioStream2.start();
+    
+            }
+            function draw(){
+                if (frameCount % 30 === 0){
+                audioStream.freq(int(notes[int(random(0,7.5))]));
+                audioStream2.freq(int(notes[int(random(0,7.5))])-880);
+                }
+                background(0,0,0,50);
+                fill(133,86,0,random(200,255));
+                noStroke();
+                var w = 0;
+                var h = 0;
+                var miclevel = clientMic.getLevel() * 50;
+                w += random(-30-miclevel*5,30+miclevel*5);
+                h += random(-30-miclevel*5,30+miclevel*5);
+                ellipse(windowWidth/2 + w,windowHeight/2 + h,3,3+miclevel);
+                socket.emit('send firefly',{
+                    winX: windowWidth,
+                    winY: windowHeight,
+                    posX: clientX,
+                    posY: clientY,
+                    w: w,
+                    h: h,
+                    otherMic: miclevel/50
+                });
+            } 
+            function windowResized(){
+                resizeCanvas(windowWidth,windowHeight);
+            }
+            
+		</script>
+	</body>
+</html>
